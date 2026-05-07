@@ -1,0 +1,90 @@
+{
+  "name": "pragmaworks",
+  "version": "0.1.0",
+  "description": "PragmaWorks suite — unified CLI + MCP for AI Readiness Audit and Remediation. Library-composes ForgeCraft (engineering standards), CodeSeeker (code intelligence), and Chronicle (AI memory) into a single conversation-driven flow under Generative Specification discipline.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "pragmaworks": "dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./mcp": {
+      "import": "./dist/mcp/server.js",
+      "types": "./dist/mcp/server.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli/index.js",
+    "mcp": "node dist/mcp/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run clean && npm run build",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "claude",
+    "claude-code",
+    "cursor",
+    "ai-assisted-development",
+    "code-quality",
+    "code-audit",
+    "ai-readiness",
+    "generative-specification",
+    "spec-driven-development",
+    "forgecraft",
+    "codeseeker",
+    "chronicle",
+    "pragmaworks",
+    "developer-tools"
+  ],
+  "homepage": "https://pragmaworks.dev",
+  "author": "Juan Carlos Ghiringhelli",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "prompts",
+    "anchors",
+    "README.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.2",
+    "forgecraft-mcp": "^1.5.0",
+    "codeseeker": "^2.0.0",
+    "chronicle-mcp": "^0.3.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.0",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "mcpName": "io.github.jghiringhelli/pragmaworks"
+}

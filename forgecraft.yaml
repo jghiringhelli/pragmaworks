@@ -1,0 +1,62 @@
+project: pragmaworks
+tier: T1-T2
+tags:
+  - UNIVERSAL
+  - MCP
+  - TYPESCRIPT
+  - ORCHESTRATOR
+  - CLI
+  - LIBRARY-COMPOSITION
+managed_by: forgecraft-mcp
+minimum_score: 13
+cascade:
+  steps:
+    - step: functional_spec
+      required: true
+      rationale: >-
+        pragmaworks is the public product surface — full functional specification
+        in docs/specs/spec.md is mandatory. The spec drives implementation, not
+        the other way around.
+      decidedAt: '2026-05-07'
+      decidedBy: founder
+    - step: architecture_diagrams
+      required: true
+      rationale: >-
+        Library composition + MCP + CLI dual entrypoint architecture is non-trivial
+        and must be diagrammed in docs/specs/architecture.md so future sessions
+        and contributors can reason about boundaries without reading code.
+      decidedAt: '2026-05-07'
+      decidedBy: founder
+    - step: constitution
+      required: true
+      rationale: >-
+        CLAUDE.md is the operative grammar that constrains every AI session
+        in this repo. Required for any GS-disciplined codebase.
+      decidedAt: '2026-05-07'
+      decidedBy: founder
+    - step: adrs
+      required: true
+      rationale: >-
+        Critical decisions (brand: pragmaworks vs forgecraft for the suite,
+        library-vs-subprocess composition, PDF engine choice, chart library,
+        rubric calibration approach) must be recorded as ADRs so they don't
+        get relitigated.
+      decidedAt: '2026-05-07'
+      decidedBy: founder
+    - step: behavioral_contracts
+      required: true
+      rationale: >-
+        MCP tool contracts (input/output schemas) and CLI subcommand contracts
+        are the integration surface for AI assistants. docs/specs/mcp-tools.md
+        and docs/specs/cli-contracts.md are mandatory.
+      decidedAt: '2026-05-07'
+      decidedBy: founder
+    - step: calibration_anchors
+      required: true
+      rationale: >-
+        Reproducibility of the seven-properties rubric depends on anchored
+        examples per score level. Without them, scores feel arbitrary and
+        the wedge collapses on the first independent run that produces a
+        different result. Anchors live in anchors/ and ship with the package.
+      decidedAt: '2026-05-07'
+      decidedBy: founder
