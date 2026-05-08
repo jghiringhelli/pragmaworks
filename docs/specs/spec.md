@@ -18,22 +18,31 @@ The package exposes an MCP server (for AI-assistant integration) and a CLI (for 
 
 ### In scope (v0.x)
 
-- **Greenfield bootstrap.** Turn a 2-sentence idea + 2-3 clarifying answers into a working project with spec, code, tests, and deployment scripts under GS discipline.
+The package supports **five entry points**, each implemented as a specialized orchestration that uses the same underlying engine (FC + CS + CH) with different prompts:
+
+- **Greenfield bootstrap.** Turn a 2-sentence idea + answers to a guided MVP conversation into a working project with spec, code, tests, and deployment scripts under GS discipline. Uses the `MVP-guide` prompt (`prompts/mvp-guide.md`) to surface the right scope decisions before generating.
 - **Brownfield audit.** Analyze an existing repo, score the seven GS properties with cited evidence and calibration anchors, evaluate applicable structural disciplines, assess documentation health and test pyramid coverage, surface security/logging baseline gaps, propose a prioritized remediation plan.
 - **Brownfield remediation.** Apply the audit's remediation plan under spec-governed AI orchestration, branch-isolated.
-- **After-report generation.** Side-by-side before/after report with deltas and charts.
-- **Team-habit and AI-bug analysis.** Commit history → PR review density, regression coverage of past bugs, AI-introduced bug rate detection, commit-size distribution, collaboration graph. Output as separate PDF.
+- **Migration.** Brownfield audit followed by a guided refinement conversation (what to drop, what to modernize, what NFRs to add, what tech stack to target) followed by greenfield bootstrap in a fresh folder using the refined spec. The user does not handwrite the new system; pragmaworks orchestrates the audit → refine → bootstrap chain.
+- **Onboarding.** Brownfield audit run in **onboarding mode** — same engine, different prompt — produces a "what is this project, how does it work, where to start" briefing for a developer joining or returning to the codebase. Includes architectural cheat sheet, conventions, and first-task suggestions. The "takeover" use case (consultant inheriting an unknown codebase) is brownfield + onboarding + team-habit-analysis run together.
+
+Plus the cross-cutting capabilities each flow uses:
+
+- **After-report generation.** Side-by-side before/after report with deltas and charts (used by remediation and migration flows).
+- **Team-habit and AI-bug analysis.** Commit history → PR review density, regression coverage of past bugs, AI-introduced bug rate detection, commit-size distribution, collaboration graph. Output as separate PDF. Lives in `src/analyzers/`. Optionally consumes Chronicle data when present for higher AI-attribution accuracy; falls back to heuristic detection (commit message patterns, branch naming, change size, time-of-day) when Chronicle is absent.
+- **Local dashboard.** `pragmaworks dashboard` subcommand starts a local web server that renders past audit reports, score history for the current project, and (when present) Chronicle data. Replaces the standalone gs-dashboard project — same purpose, embedded in this package.
 - **HTML and PDF report rendering.** Both formats from the same audit JSON. Charts via the chart library decided in `docs/adrs/0004`. PDF via the engine decided in `docs/adrs/0003`.
 - **Free-vs-paid licensing trigger and judgment-layer disclaimer** on the last page of every PDF.
 - **Calibration anchor library** shipped with the package — three anchored examples per score level (0/1/2) for each of the seven GS properties, per `docs/adrs/0005`.
 
 ### Out of scope (v0.x — explicitly deferred)
 
-- Chronicle Team (cross-developer organizational memory) — separate longer-arc build, not gating v1
-- Multi-repo dashboards (`app.pragmaworks.dev`) — separate web app, not part of this package
-- Stripe billing — separate billing infrastructure
-- T4/T5 production monitoring orchestration — `forgecraft-eye` territory, deferred
-- Docker / Homebrew / Chocolatey distribution surfaces — npm is enough for v1
+- **Chronicle Team** (cross-developer organizational memory) — separate longer-arc build, not gating v1. Self-hosted on customer infrastructure when shipped.
+- **Hosted SaaS surfaces** — none. We host nothing customer-touching. The local dashboard subcommand serves single-user/team-on-one-machine cases. Multi-machine team dashboard is a Chronicle Team feature, also self-hosted.
+- **GitHub Action / CI integration as a separate product** — explicitly NOT a separate surface. Customers add `npx pragmaworks audit` to whatever CI they already run. The AI assistant configures it for them when relevant. We do not maintain a CI-specific package.
+- Stripe billing — license-key-driven, not per-call billing.
+- T4/T5 production monitoring orchestration — `forgecraft-eye` territory, deferred.
+- Docker / Homebrew / Chocolatey distribution surfaces — npm is enough for v1.
 - IDE extensions beyond MCP — MCP integration covers Claude Code, Cursor, Windsurf, etc.
 
 ## 3. Cookbook flow obligations

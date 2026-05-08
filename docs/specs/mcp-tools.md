@@ -10,6 +10,8 @@ The tool surface is intentionally small (~9 tools) so the AI assistant gets a lo
 
 ## Tool catalog
 
+The catalog is now 11 tools covering the five entry points (greenfield bootstrap, brownfield audit, brownfield remediation, migration, onboarding) plus cross-cutting capabilities (report generation, after-report, team-habit analysis, single-property scoring, harness setup, Chronicle install).
+
 ### `pragmaworks_bootstrap_project`
 
 **Description.** Bootstrap a new project from a 2-sentence idea: gather clarifying answers (MVP scope, tech stack), set up the GS specification cascade in the current empty folder, and prepare the environment for the AI assistant to generate code under that discipline.
@@ -255,6 +257,74 @@ The tool surface is intentionally small (~9 tools) so the AI assistant gets a lo
   status: 'installed' | 'already-installed';
 }
 ```
+
+---
+
+### `pragmaworks_migrate_project`
+
+**Description.** Multi-stage migration flow. Run a brownfield audit on an existing system to extract a stack-independent specification; run a guided refinement conversation (what to drop, what to modernize, what NFRs to add, what tech stack to target); then bootstrap a fresh project in a new folder using the refined spec. The user does not handwrite the new system — pragmaworks orchestrates the chain. Useful for stack migrations (e.g., Rails → Go), platform migrations (e.g., AWS → Kubernetes), or modernization passes that effectively rebuild while preserving behavior.
+
+**Input.**
+```ts
+{
+  sourceRepoPath: string;                      // existing system to migrate FROM
+  targetFolderPath: string;                    // empty folder to migrate INTO
+  targetTechStackPreference?: string;          // optional; AI proposes if not given
+  refinementAnswers?: Record<string, string>;  // answers to the refinement conversation
+}
+```
+
+**Output.**
+```ts
+{
+  status: 'audit-complete' | 'awaiting-refinement' | 'bootstrapped' | 'failed';
+  refinementQuestions?: string[];              // when status = 'awaiting-refinement'
+  extractedSpec?: string;                      // path to the stack-independent spec
+  bootstrappedArtifacts?: {                    // when status = 'bootstrapped'
+    spec: string;
+    claudeMd: string;
+    forgecraftYaml: string;
+    techStack: string;
+  };
+  nextSteps: string[];
+}
+```
+
+**Use case.** `docs/specs/use-cases/migrate.md`.
+
+---
+
+### `pragmaworks_onboard_developer`
+
+**Description.** Brownfield audit run in **onboarding mode**: same engine as `audit_repo`, different prompt. Produces a "what is this project, how does it work, where to start" briefing rather than a "what's wrong with this project" critique. Includes architectural cheat sheet, conventions, and 2-3 concrete first-task suggestions sized for a new developer's first week. Used by developers joining a team, returning after time away, or consultants inheriting an unknown codebase.
+
+**Input.**
+```ts
+{
+  repoPath: string;
+  developerRole?: 'frontend' | 'backend' | 'full-stack' | 'data' | 'devops' | 'other';
+  experienceLevel?: 'junior' | 'mid' | 'senior' | 'staff';
+  focusArea?: string;                          // optional module/feature they're starting on
+  includeTeamHabits?: boolean;                 // include team-habit context (good for takeover use case)
+  format?: ('html' | 'pdf' | 'markdown')[];    // markdown is most useful for IDE-pasted reading
+}
+```
+
+**Output.**
+```ts
+{
+  outputDir: string;
+  briefing: {
+    markdown: string;                          // path to onboarding-briefing.md
+    pdf?: string;
+    html?: string;
+  };
+  cheatSheet: string;                          // path to architectural-cheatsheet.md
+  firstTasks: { title: string; difficulty: 'easy' | 'medium'; estimatedHours: number }[];
+}
+```
+
+**Use case.** `docs/specs/use-cases/onboard.md`.
 
 ---
 
