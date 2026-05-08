@@ -8,7 +8,8 @@
  *
  * This file owns the orchestration only. It does not score the rubric, render
  * the report, or shell out to git — those concerns live in dedicated modules
- * (see TODOs below) so this file stays focused on sequencing and assembly.
+ * (sentinel/detect, git/branch, git/commit, analyzers/*, renderer/*) so this
+ * file stays focused on sequencing and assembly.
  *
  * Hard contracts enforced here (per spec.md §6):
  *   - Branch isolation: never write to `main`; always a fresh
@@ -29,61 +30,18 @@ import { queryForgeCraft } from '../forgecraft.js';
 import { queryCodeSeeker } from '../codeseeker.js';
 import { queryChronicle } from '../chronicle.js';
 
-// ---------------------------------------------------------------------------
-// Public types — match docs/specs/mcp-tools.md `pragmaworks_audit_repo`.
-// These will likely migrate to src/types.ts once the audit JSON shape is fully
-// defined; kept local for now to keep the skeleton self-contained.
-// ---------------------------------------------------------------------------
+// New per-concern modules: sentinel detection + git branch/commit helpers.
+import { detectSentinels } from '../sentinel/detect.js';
+import { createBranchFromHead } from '../git/branch.js';
+import { commitFiles } from '../git/commit.js';
 
-/** The seven GS properties scored on every audit (spec.md §4). */
-export type GsProperty =
-  | 'self-describing'
-  | 'bounded'
-  | 'composable'
-  | 'verifiable'
-  | 'auditable'
-  | 'defended'
-  | 'executable';
-
-export type AuditFormat = 'json-only' | 'json+html' | 'json+html+pdf';
-
-export interface AuditInput {
-  /** Absolute path to repo root. */
-  repoPath: string;
-  /** Default false. When true, the team-habit analyzer is included. */
-  includeTeamHabits?: boolean;
-  /** Default `pragmaworks/audit-<timestamp>`. */
-  branchName?: string;
-  /** Default `json+html+pdf`. */
-  format?: AuditFormat;
-}
-
-export interface AuditSummary {
-  /** 0–14, sum across the seven 0/1/2-scored properties. */
-  overallScore: number;
-  perPropertyScores: Record<GsProperty, 0 | 1 | 2>;
-  /** Cover-summary "top 3 risks" (spec.md §5 section 1). */
-  topRisks: string[];
-  remediationItemCount: number;
-}
-
-export interface AuditOutput {
-  /** Branch the artifacts were committed to. */
-  branch: string;
-  /** `<repo>/pragmaworks/audit-<timestamp>/`. */
-  outputDir: string;
-  reportPaths: {
-    json: string;
-    html?: string;
-    pdf?: string;
-  };
-  summary: AuditSummary;
-  /**
-   * Adapter unavailability and partial-data notes — every gap recorded here
-   * also appears as a labeled "Section partial" entry in the rendered report.
-   */
-  gaps: string[];
-}
+// Shared types (consolidated in src/types.ts).
+import type {
+  AuditFormat,
+  AuditInput,
+  AuditOutput,
+  AuditSummary,
+} from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Orchestration entry point.
@@ -113,20 +71,18 @@ export async function auditRepo(input: AuditInput): Promise<AuditOutput> {
   const outputDir = join(input.repoPath, 'pragmaworks', `audit-${timestamp}`);
   const gaps: string[] = [];
 
-  // -- Step 1: sentinel detection ------------------------------------------
-  // TODO(sentinel): call `detectSentinels(input.repoPath)` from
-  //   '../sentinel/detect.js' (per architecture.md §7). Pass the result to
-  //   the renderer so any AI-behavioral output gets MAPPED into existing
-  //   files under labeled headers, never overwriting (unless --override).
+  // -- Step 1: sentinel detection (architecture.md §7) ----------------------
+  // The renderer will receive `sentinel` so AI-behavioral output gets MAPPED
+  // into existing files under labeled headers rather than overwriting.
+  const sentinel = detectSentinels(input.repoPath);
+  // Reference to keep `sentinel` live until the renderer wiring lands; the
+  // detector is cheap and reading it now means we fail fast on a missing repo.
+  void sentinel;
 
-  // -- Step 2: branch isolation --------------------------------------------
-  // TODO(git): refuse to proceed when the working tree is dirty.
-  //   - Use `gitStatusPorcelain(input.repoPath)` from '../git/status.js'.
-  //   - On dirty tree: throw a typed error the MCP layer can relay to the AI
-  //     so it can ask the user to commit/stash. NEVER auto-stash (spec §6).
-  // TODO(git): create `branch` from current HEAD via
-  //   `createBranchFromHead(input.repoPath, branch)` in '../git/branch.js'.
-  //   Capture the parent commit SHA for the commit message in step 7.
+  // -- Step 2: branch isolation (spec.md §6) --------------------------------
+  // `createBranchFromHead` refuses on a dirty tree (no auto-stash) and
+  // captures the parent SHA for the commit message in step 7.
+  const branchInfo = await createBranchFromHead(input.repoPath, branch);
 
   // -- Step 3: fan-out adapters with graceful degradation -------------------
   //
@@ -183,6 +139,8 @@ export async function auditRepo(input: AuditInput): Promise<AuditOutput> {
   // -- Step 4: assemble the structured AuditResult JSON --------------------
   // TODO(assembly): build the canonical AuditResult per spec.md §5
   //   (the eight report sections in order). Inputs:
+  //     - sentinel               → carried into the JSON for the renderer
+  //     - branchInfo.parentSha   → embedded in the JSON header + commit msg
   //     - forgecraftResult       → section 5 (seven GS properties)
   //     - codeseekerResult       → cover summary top risks + section 8 roadmap
   //     - chronicleResult        → section 8 (informs roadmap with prior ADRs)
@@ -193,8 +151,7 @@ export async function auditRepo(input: AuditInput): Promise<AuditOutput> {
   //   anchor in `anchors/<property>/<score>.md`. If none exists at that level,
   //   mark the score `provisional: true` in the JSON. Renderer renders that
   //   tag as "(provisional — calibration anchor missing)".
-  // TODO(types): define `AuditResult` in '../types.ts' to match the JSON the
-  //   renderer consumes; the `summary` below is a slice of it.
+  //   Target shape: `AuditResult` in '../types.ts'.
   const summary: AuditSummary = placeholderSummary();
 
   // -- Step 5: render hooks ------------------------------------------------
@@ -202,7 +159,7 @@ export async function auditRepo(input: AuditInput): Promise<AuditOutput> {
     json: join(outputDir, 'audit.json'),
   };
   if (format === 'json+html' || format === 'json+html+pdf') {
-    // TODO(renderer): call `renderHtml(auditResult, sentinelInfo)` from
+    // TODO(renderer): call `renderHtml(auditResult, sentinel)` from
     //   '../renderer/html.js'; write to `reportPaths.html`. Anchor refs are
     //   clickable links in HTML (use-case audit.md "Notes for the renderer").
     reportPaths.html = join(outputDir, 'report.html');
@@ -221,15 +178,23 @@ export async function auditRepo(input: AuditInput): Promise<AuditOutput> {
   // TODO(io): mkdirp `outputDir`; write `audit.json` (canonical), then HTML
   //   and PDF as produced above. Also write `<outputDir>/.log/` with the
   //   structured orchestration trace per architecture.md §8 (gitignored).
+  //   Push the absolute paths of every successfully-written artifact onto
+  //   `writtenFiles` so step 7 commits exactly what was produced.
+  const writtenFiles: string[] = [];
 
   // -- Step 7: commit on the new branch ------------------------------------
-  // TODO(git): commit the new files on `branch` with message:
-  //   `pragmaworks: audit ${timestamp} on ${parentSha}` (use-case audit.md
-  //   step 5). Helper: `commitFiles(repoPath, branch, files, message)` in
-  //   '../git/commit.js'.
+  // No-op while step 6 is still TODO (`commitFiles` short-circuits on an
+  // empty list). Once artifacts are written, the existing call already
+  // commits the right set on the right branch with the right message.
+  await commitFiles(
+    input.repoPath,
+    branchInfo.branchName,
+    writtenFiles,
+    `pragmaworks: audit ${timestamp} on ${branchInfo.parentSha}`,
+  );
 
   return {
-    branch,
+    branch: branchInfo.branchName,
     outputDir,
     reportPaths,
     summary,
