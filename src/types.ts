@@ -187,3 +187,78 @@ export interface AuditResult {
   /** Adapter unavailability and partial-data notes. */
   gaps: string[];
 }
+
+// ── Analyzer outputs (src/analyzers/*.ts) ─────────────────────────────────────
+
+/**
+ * Output of `analyzers/git-history.analyzeGitHistory` — drives spec.md §5
+ * section 7 ("Team-habit analysis"). Cheap derivations are populated for
+ * real; expensive ones (PR review density, regression coverage, collab
+ * graph) are stubbed with documented TODOs in the analyzer.
+ */
+export interface TeamHabitData {
+  /** 0–1 fraction of merged PRs that received at least one review. */
+  prReviewDensity: number;
+  /** 0–1 fraction of bugfix commits shipping with a regression test. */
+  regressionCoverageRate: number;
+  /** Lines changed (insertions + deletions) per commit, averaged. */
+  avgCommitSize: number;
+  /** Distinct authors observed in the window. */
+  contributorCount: number;
+  /** Weighted co-author / co-edit edges between contributors. */
+  collaborationGraph: { from: string; to: string; weight: number }[];
+  /** Top-level module commit counts and recency in days since HEAD. */
+  perModuleActivity: { path: string; commits: number; lastTouchedDays: number }[];
+}
+
+/**
+ * Output of `analyzers/ai-bugs.detectAiBugs` — drives the AI-introduced
+ * bug-rate signal called out in spec.md §2 (cross-cutting capabilities).
+ * Heuristic mode is the default; Chronicle enrichment is opt-in via the
+ * caller passing a chronicle client.
+ */
+export interface AiBugAnalysis {
+  /** Commits classified as AI-authored within the window. */
+  aiAttributedCommitCount: number;
+  /** Bugfix commits attributable to an AI-authored predecessor (or self). */
+  aiAttributedBugCount: number;
+  /** 0–1 ratio; 0 when the AI-attributed commit count is 0 (no NaN). */
+  aiBugRate: number;
+  /** 'heuristic' (default) or 'chronicle-enriched' when memory data merged in. */
+  method: 'heuristic' | 'chronicle-enriched';
+  /** Per-pattern hit counts so the report can show which signals fired. */
+  heuristicSignals: { pattern: string; matchedCount: number }[];
+}
+
+/**
+ * Output of `analyzers/rubric.scoreRubric` — section 5 of the audit JSON.
+ * Wraps the canonical `PropertyScore[]` with a precomputed sum so the
+ * renderer's cover summary doesn't recompute it.
+ */
+export interface RubricScores {
+  /** One row per `GsProperty` in the canonical order from spec.md §4. */
+  scores: PropertyScore[];
+  /** Sum of `scores[].score` (0–14). */
+  overallScore: number;
+}
+
+/** Single discipline applicability + score. */
+export interface DisciplineScore {
+  discipline: 'SOLID' | 'TDD' | 'hexagonal' | 'layered' | 'clean-architecture' | 'DDD';
+  /** Whether the discipline is in the cap-3 set selected for this repo. */
+  applies: boolean;
+  /** 0/1/2 score against the discipline; 0 when `applies` is false. */
+  score: 0 | 1 | 2;
+  evidence: string[];
+  improvementPath: string;
+}
+
+/**
+ * Output of `analyzers/disciplines.analyzeDisciplines` — section 2 of the
+ * audit JSON. `notes` carries any analyzer-side limits the renderer should
+ * surface (e.g. "discipline catalog unavailable; awaiting forgecraft v1.6+").
+ */
+export interface DisciplineResults {
+  disciplines: DisciplineScore[];
+  notes: string[];
+}
