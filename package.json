@@ -65,9 +65,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.24.2",
-    "forgecraft-mcp": "^1.5.0",
+    "forgecraft-mcp": "^1.4.0",
     "codeseeker": "^2.0.0",
-    "chronicle-mcp": "^0.3.0"
+    "chronicle-mcp": "^0.3.0",
+    "puppeteer": "^23.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",

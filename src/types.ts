@@ -262,3 +262,39 @@ export interface DisciplineResults {
   disciplines: DisciplineScore[];
   notes: string[];
 }
+
+// ── Renderer types (src/renderer/*.ts) ────────────────────────────────────────
+
+/** Chart types supported by `src/renderer/charts.ts` (per ADR 0004). */
+export type ChartType = 'bar' | 'stackedBar' | 'radar' | 'line' | 'pie';
+
+export interface ChartDataset {
+  label: string;
+  data: number[];
+  backgroundColor?: string | string[];
+  borderColor?: string;
+}
+
+/**
+ * Declarative chart spec consumed by `buildChart` in `src/renderer/charts.ts`.
+ * `id` must be unique within the rendered HTML page (it becomes the canvas id).
+ */
+export interface ChartSpec {
+  id: string;
+  type: ChartType;
+  title?: string;
+  labels: string[];
+  datasets: ChartDataset[];
+  width?: number;
+  height?: number;
+}
+
+/** Optional knobs for the HTML/PDF renderer. */
+export interface RenderOptions {
+  /** Override the document title (default: "PragmaWorks Audit Report"). */
+  title?: string;
+  /** Chart.js CDN URL injected into the HTML head. */
+  chartCdnUrl?: string;
+  /** When true, emit "data not available" placeholders instead of empty sections. */
+  showPlaceholders?: boolean;
+}
