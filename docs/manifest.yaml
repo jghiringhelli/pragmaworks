@@ -1,0 +1,88 @@
+# pragmaworks — docs/manifest.yaml
+#
+# Per-project instance of the canonical GS doc-manifest schema. References the
+# schema at forgecraft@1.6.0/templates/docs-manifest.yaml and overrides paths
+# only where this project departs from the canonical layout.
+#
+# pragmaworks is a greenfield project that adopted the canonical taxonomy from
+# day one. It follows the schema's defaults closely; the only departures are:
+# - use-cases live under docs/specs/use-cases/ (sub-folder of specs) rather
+#   than top-level docs/use-cases/, because pragmaworks has many spec docs
+#   and the use-case files are tightly coupled to the specs they exercise
+# - schemas/ is not used yet; reserved for future MCP tool surface schemas
+# - contracts/ is not used yet; reserved for future external API contracts
+
+schema_source: forgecraft@1.6.0/templates/docs-manifest.yaml
+
+version: 1
+
+project:
+  name: pragmaworks
+  type: tool                    # CLI + MCP server combined
+  release_phase: greenfield     # built from scratch under GS discipline
+
+# ── Path overrides ────────────────────────────────────────────────────────
+# The canonical schema places use-cases at docs/use-cases/; this project
+# nests them under docs/specs/use-cases/ to keep them adjacent to the
+# specs they implement.
+overrides:
+  documents.use_cases.path: docs/specs/use-cases/
+
+# ── Cascade severity (greenfield → error from day one) ─────────────────────
+# Greenfield projects can enforce error severity from the start. This project
+# does so per the schema's recommendation for greenfield work.
+cascade_overrides:
+  feat:
+    severity: error
+  fix:
+    severity: error
+  refactor:
+    severity: warning           # encouraged ADR, not blocking
+  perf:
+    severity: warning
+  docs:
+    severity: info
+  test:
+    severity: info
+  chore:
+    severity: info
+  ci:
+    severity: info
+  revert:
+    severity: warning           # decision encouraged
+
+# ── Recording layers ──────────────────────────────────────────────────────
+# Declares which tool owns which layer. Pragmaworks is the orchestrator; it
+# coordinates with the underlying tools at the manifest contract level only.
+recording:
+  project:
+    owner: forgecraft-mcp@^1.6.0
+    artifact_root: ./
+  individual:
+    owner: chronicle-mcp@^0.4.0  # via library-mode entrypoint
+    artifact_root: ~/.chronicle/  # global by default; project-scoped via pragmaworks_install_chronicle_project_scope
+  team:
+    owner: chronicle-team@^0.1.0  # not yet published; placeholder
+    artifact_root: shared-db
+    status: not-yet-active
+
+# ── Human-judgment configuration ──────────────────────────────────────────
+human_judgment:
+  protected_branches:
+    - main
+  min_reviewers: 0              # solo mode currently; bump when contributors join
+  block_ai_only_merge: true     # merges require at least one human comment
+
+# ── API surface detection ─────────────────────────────────────────────────
+# Public-surface changes require spec or ADR touch regardless of commit type.
+api_surface:
+  paths:
+    - src/mcp/server.ts          # MCP tool surface — public contract
+    - src/cli/index.ts           # CLI subcommand surface — public contract
+    - src/index.ts               # library entry — public contract
+    - prompts/                   # cookbook orchestration prompts — public surface
+  triggers:
+    - spec_or_adr_required
+
+# ── Brownfield settings (n/a for this project) ────────────────────────────
+# Pragmaworks is greenfield. No legacy file fallbacks needed.
