@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * gs-onboardkit — MCP server entry point.
+ * @deprecated — gs-onboardkit MCP entry point, kept for backwards compatibility.
+ *
+ * The unified pragmaworks suite now ships its MCP server from
+ * `src/mcp/server.ts` (eleven tools per docs/specs/mcp-tools.md) and its CLI
+ * from `src/cli/index.ts`. New integrations should target those entry points.
+ * This file remains so existing `npx gs-onboardkit`-style invocations and
+ * library consumers importing the package main keep working until the next
+ * major bump.
  *
  * Exposes three tools:
  *   onboard — full context assembly, three-question flow, writes .onboardkit/context.md
