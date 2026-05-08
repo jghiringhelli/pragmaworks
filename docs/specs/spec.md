@@ -60,6 +60,7 @@ The two cookbook pages on `pragmaworks.dev` describe the user-facing experience.
 | Cookbook step (leaders cookbook) | This package delivers via |
 |---|---|
 | "Audit this project for engineering leadership" | `pragmaworks_audit_repo` MCP tool |
+| Detect existing `docs/manifest.yaml` (or generate one from canonical defaults if absent) and surface override needs for non-canonical paths | `pragmaworks_audit_repo` — manifest-detection step inside `src/orchestration/audit.ts` |
 | Initial PDF report (eight sections) | `src/renderer/` produces HTML+PDF from audit JSON |
 | "Run team-habit analysis on last 90 days" | `pragmaworks_analyze_team_habits` MCP tool |
 | "Apply the top 5 items from the remediation plan" | `pragmaworks_remediate` MCP tool |
@@ -109,6 +110,9 @@ These are non-negotiable; violating them breaks the user trust we depend on:
 - **Reproducibility floor.** Two independent runs of `pragmaworks_audit_repo` against the same repo at the same commit (different sessions, different operators) must produce scores within ±1 across all seven properties.
 - **Graceful degradation.** If an underlying tool (ForgeCraft, CodeSeeker, Chronicle) fails or is missing, produce a partial report with a clearly-labeled gap. Never silently skip.
 - **No secrets in output.** Reports contain architectural knowledge only. No tokens, no credentials, no PII detected from the codebase ever lands in output.
+- **Manifest authoring.** When pragmaworks runs against a target repo that does not have a `docs/manifest.yaml`, it generates one. The generated file references the canonical schema as `schema_source: forgecraft@1.6.0/templates/docs-manifest.yaml` and includes `overrides:` entries for every non-canonical doc location the audit scanner discovered (e.g., `docs/PRD.md` → `documents.specs.legacy_files`, `docs/adr/` → `documents.adrs.legacy_dirs`). The user is told a manifest was written and where; nothing is written silently.
+- **Cascade enforcement.** Pragmaworks-installed pre-commit hooks (delegated to `forgecraft-mcp setup-hooks`) enforce the doc-first cascade per commit type. `feat:` requires a `docs/specs/` touch, `fix:` requires a regression test, and so on per the manifest's `cascade:` block. Severity (`error` / `warning` / `info`) is read from the manifest, not hard-coded — brownfield repos start at `warning` and ramp to `error` as their baseline cleans up.
+- **Public-surface diff rule.** Any change to exports, public types, CLI flags, or MCP tool schemas requires a touch of `docs/specs/` or `docs/adrs/` regardless of commit type. Detection rules live in the manifest's `api_surface:` block; the rule is enforced both at commit time (local hook) and at PR time (CI). This applies to pragmaworks itself and to every target repo pragmaworks audits or remediates.
 
 ## 7. Success criteria for v1.0
 

@@ -33,6 +33,7 @@ MCP configuration in `.mcp.json` (`pragmaworks mcp` subcommand).
 | Calibration anchors for the seven GS properties | `anchors/` |
 | ForgeCraft governance, quality gates, sentinel rules | `.claude/index.md` |
 | Architecture decisions | `docs/adrs/` |
+| Canonical doc-manifest schema (the integration contract) | `forgecraft-mcp/templates/docs-manifest.yaml` |
 | Cookbook flow this package backs | `https://pragmaworks.dev/try` and `/leaders` |
 
 ---
@@ -57,6 +58,14 @@ MCP configuration in `.mcp.json` (`pragmaworks mcp` subcommand).
   Text lives in `prompts/judgment-layer-disclaimer.md`.
 - **Never stores secrets.** Reports contain architectural knowledge only. No tokens,
   no credentials, no PII detected from the codebase ever lands in output.
+- **Manifest contract.** When pragmaworks runs a cookbook flow against a target repo
+  it reads (and, when missing, writes) that repo's `docs/manifest.yaml`. Pragmaworks
+  itself uses its own `docs/manifest.yaml` for the same purpose. The manifest —
+  schema sourced from `forgecraft-mcp/templates/docs-manifest.yaml` — is the **only
+  required integration contract** between pragmaworks and the underlying tools
+  (forgecraft, chronicle, chronicle-team). No SDK-level coupling: each tool reads
+  the manifest and stays in its lane (project / individual / team layer). See
+  ADR 0006 for rationale.
 - **MCP SDK v1.** Same pattern as ForgeCraft, CodeSeeker, Chronicle.
 
 ---

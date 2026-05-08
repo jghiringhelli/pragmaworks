@@ -169,3 +169,70 @@ Every orchestration call logs structured events to `<repo>/pragmaworks/.log/` (g
 ## 9. Versioning
 
 Semver. Underlying tool dependencies use caret ranges (`^1.5.0`) so minor and patch updates are picked up automatically. Major-version bumps of underlying tools require a `pragmaworks` major bump and explicit testing.
+
+## 10. Three-layer recording architecture
+
+Pragmaworks does not own the storage of project, individual, or team memory — it orchestrates flows that read and write across three independent layers, each owned by a sister tool. The integration glue between them is a single YAML file: `docs/manifest.yaml`, sourced from `forgecraft-mcp/templates/docs-manifest.yaml` (see ADR 0006). No tool depends on another at the SDK level.
+
+### 10.1 The three layers
+
+```
+                       ┌──────────────────────────┐
+                       │  docs/manifest.yaml      │
+                       │  (per project)           │
+                       │  schema_source: ─────────┼──→ forgecraft canonical schema
+                       └──────────────────────────┘
+                                  ▲
+                  ┌───────────────┼────────────────┐
+                  │               │                │
+           ┌──────────────┐  ┌────────────┐  ┌──────────────────┐
+           │  Project     │  │ Individual │  │ Team             │
+           │  layer       │  │ layer      │  │ layer            │
+           │              │  │            │  │                  │
+           │  forgecraft  │  │ chronicle  │  │ chronicle-team   │
+           │  + repo      │  │            │  │                  │
+           └──────────────┘  └────────────┘  └──────────────────┘
+                  │                                 │
+                  │  forgecraftScore/Tier/Pass      │
+                  └─────────────────────────────────┘
+                       (forgecraft writes,
+                        chronicle-team reads via axon verify)
+```
+
+| Layer | Owner | Stores | Lives in |
+|---|---|---|---|
+| **Project** | `forgecraft-mcp` + the repo itself | specs, ADRs, decisions, use-cases, roadmaps, schemas, contracts, hooks, gates | the project's `docs/` + `.claude/hooks/` + `.forgecraft/` |
+| **Individual** | `chronicle-mcp` | prompt history, findings, work style, personal patterns | local memory store (`~/.chronicle/`) |
+| **Team** | `chronicle-team` | shared findings, ticket integration, workload split, prompt analytics | shared DB + dashboard |
+
+The layers are independent but propagate: ADRs decided at the team layer flow back into project ADRs in the repo; insights at the individual layer can promote to team; changes in the project repo update both individual context (the next chronicle session reads them) and team dashboards.
+
+### 10.2 How the cookbook flows interact with each layer
+
+| Cookbook flow | Project layer | Individual layer | Team layer |
+|---|---|---|---|
+| **Greenfield bootstrap** | Pragmaworks asks forgecraft to scaffold `docs/manifest.yaml` + the canonical taxonomy + cascade hooks. Cascade enforced from commit one. | Chronicle (if installed) starts a session, surfaces docs/specs/ and docs/use-cases/ as the dev works. | None unless chronicle-team is installed; then the new repo registers and its roadmap items flow into the workload-split queue. |
+| **Brownfield audit** | Pragmaworks reads the existing `docs/manifest.yaml` if present; otherwise generates one with overrides for legacy paths. The audit scores the project layer against the canonical schema and surfaces gaps. | Chronicle's individual memory is read (if present) to enrich AI-bug attribution. Not written. | Chronicle-team is read (if reachable) for cross-repo team-habit context. Not written. |
+| **Brownfield remediation** | Pragmaworks runs forgecraft's setup-hooks + propose_session against the now-manifest-aware repo. Cascade severity ramps per the manifest's `cascade_overrides` block. | Chronicle records the remediation session for future recall. | Chronicle-team receives a `forgecraftScore`/`forgecraftTier`/`forgecraftPass` payload when remediation completes (post-results integration). |
+| **Migration** | Audit + greenfield in sequence; both interact with the project layer as above, in two separate target folders. | Chronicle bridges sessions across both folders so refinement context flows forward. | Same as remediation — completion posts results upstream. |
+| **Onboarding** | Read-only against the project layer. Generates a briefing file in `<repo>/pragmaworks/onboarding-<timestamp>/`. | Chronicle (if installed) surfaces relevant individual memory; the briefing seeds a fresh memory tier when none exists. | Read-only; team-habit data optionally enriches the briefing. |
+| **Team-habit analysis** | Reads commit history from the project layer. | Chronicle data optionally consumed for higher AI-attribution accuracy. | Chronicle-team data optionally consumed for cross-repo aggregation. |
+| **After-report** | Re-reads the project layer at the after-state. Diffs against the before-audit JSON. | None. | Optionally posts after-state results to chronicle-team. |
+
+### 10.3 The manifest as integration contract
+
+Every interaction in the table above goes through the manifest. Forgecraft writes hooks and gates; chronicle decides which docs to surface at session start; chronicle-team decides which ticket maps to which spec. None of them call each other's APIs. They each open `docs/manifest.yaml`, read the relevant block, and stay in their lane.
+
+Pragmaworks orchestrates by:
+
+1. **Reading the manifest first.** Every cookbook flow starts by reading (or generating) `docs/manifest.yaml`. Path resolution order: project's `overrides:` → project's top-level fields → canonical schema defaults.
+2. **Routing by layer.** Project-layer work delegates to the forgecraft adapter; individual-layer reads/writes go through the chronicle adapter; team-layer interactions go through chronicle-team's HTTP surface (`scripts/post-results.cjs` pattern).
+3. **Degrading gracefully.** If chronicle is missing, pragmaworks reports the gap and continues with project-only data. Same for chronicle-team. The manifest stays intact.
+
+This is what the `recording:` block in the manifest documents — which tool owns which layer — so any future tool that wants to participate (a different individual-memory store, an alternate team dashboard) can declare itself in the same block without code changes here.
+
+### 10.4 What pragmaworks must NOT do
+
+- **Do not call forgecraft's, chronicle's, or chronicle-team's internal APIs across the layer boundary.** Talk to forgecraft about the project layer only; never poke chronicle's memory store from the project layer.
+- **Do not silently write the manifest.** Manifest authoring is a hard contract (see `spec.md` §6) — the user is told.
+- **Do not vendor the canonical schema.** Reference it by `schema_source:` only. If forgecraft ships an updated schema, projects pick it up by bumping the forgecraft version in their dependency tree, not by us copying the new file in.
