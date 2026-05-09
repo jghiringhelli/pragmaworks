@@ -1,6 +1,6 @@
 project: pragmaworks
 schema_source: forgecraft@1.6.0/templates/docs-manifest.yaml
-tier: T1-T2
+tier: T1
 tags:
   - UNIVERSAL
   - MCP

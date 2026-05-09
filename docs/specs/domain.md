@@ -76,9 +76,9 @@ The canonical list scored by the audit: Self-describing, Bounded, Composable, Ve
 
 Engineering disciplines the audit evaluates applicability for: SOLID, TDD presence, hexagonal architecture, clean architecture, layered design pattern, DDD vocabulary. Codebase is scored on each that applies; disciplines that don't apply are skipped.
 
-## T1 / T2 / T3 / T4 / T5
+## T1 / T2 / T3 / T4 / T5 / T6
 
-The seven-tier obligation cascade defined in the white paper §4. T1 (specification) and T2 (harness) are in scope for v0.x. T3 (deployment from spec) is partially supported via forgecraft-mcp delegation. T4 and T5 are out of scope for this package (T4 is `forgecraft-eye` territory).
+The six-tier lifecycle-stage obligation cascade defined in the white paper §4. Each tier carries authoring AND verification obligations; the harness is cross-cutting and recurs at every tier with stage-appropriate tests, not a separate tier. T1 (Development — spec, code, harness) is fully in scope for v0.x. T2 (Staging / Pre-prod — deployment from spec) is partially supported via forgecraft-mcp delegation. T3 (Production — monitoring) and T4 (Evolution) are out of scope for this package (T3 is `forgecraft-eye` territory). T5 (Synthesis) and T6 (Meta-telos) are higher-order tiers not orchestrated here.
 
 ## Team-habit analysis
 

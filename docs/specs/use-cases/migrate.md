@@ -38,7 +38,7 @@ A developer or tech lead migrating an existing system to a new stack, platform, 
 8. Orchestrator merges the user's refinement answers into the extracted spec to produce a **refined target spec**.
 9. Orchestrator delegates to `pragmaworks_bootstrap_project` against the `targetFolderPath` with the refined spec as input.
 10. forgecraft adapter sets up the cascade in the target folder (CLAUDE.md, forgecraft.yaml, docs/specs/spec.md, docs/adrs/, etc.) tailored to the chosen target tech stack.
-11. AI assistant generates code under the established spec (T1 → T2 → T3 cascade).
+11. AI assistant generates code under the established spec (T1 → T2 cascade — spec/code/harness at T1, deployment at T2).
 12. Orchestrator returns `status: 'bootstrapped'` with paths to the generated artifacts.
 
 ## Postcondition

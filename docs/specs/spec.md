@@ -41,7 +41,7 @@ Plus the cross-cutting capabilities each flow uses:
 - **Hosted SaaS surfaces** — none. We host nothing customer-touching. The local dashboard subcommand serves single-user/team-on-one-machine cases. Multi-machine team dashboard is a Chronicle Team feature, also self-hosted.
 - **GitHub Action / CI integration as a separate product** — explicitly NOT a separate surface. Customers add `npx pragmaworks audit` to whatever CI they already run. The AI assistant configures it for them when relevant. We do not maintain a CI-specific package.
 - Stripe billing — license-key-driven, not per-call billing.
-- T4/T5 production monitoring orchestration — `forgecraft-eye` territory, deferred.
+- T3/T4 production monitoring and evolution orchestration — `forgecraft-eye` territory, deferred.
 - Docker / Homebrew / Chocolatey distribution surfaces — npm is enough for v1.
 - IDE extensions beyond MCP — MCP integration covers Claude Code, Cursor, Windsurf, etc.
 
@@ -54,7 +54,7 @@ The two cookbook pages on `pragmaworks.dev` describe the user-facing experience.
 | "Use PragmaWorks methodology to bootstrap" | `pragmaworks_bootstrap_project` MCP tool |
 | AI asks 2-3 clarifying questions | `prompts/bootstrap-clarify.md` referenced by the orchestrator |
 | Spec generated under GS discipline | Orchestrator delegates to `forgecraft-mcp` for cascade setup |
-| T1-T2-T3 done automatically | Orchestrator runs the spec, harness, deployment cascade |
+| T1-T2 done automatically | Orchestrator runs the spec, harness, deployment cascade (T1 collapses spec/code/harness; T2 covers deployment) |
 | Optional: run harness end-to-end with screenshots | `pragmaworks_setup_harness` + multimodal verification step |
 
 | Cookbook step (leaders cookbook) | This package delivers via |

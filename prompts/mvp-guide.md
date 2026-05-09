@@ -42,7 +42,7 @@ The cookbook promises the user "answer a few clarifying questions briefly, sit b
 
 > Local-only on your machine, or hosted somewhere (we can target Vercel / Railway / Fly with the deployment scripts)? If you don't know yet, "local for now" is fine — we can add hosting later.
 
-**Why this matters.** Determines whether T3 (deployment scripts) targets a local docker-compose or a real cloud platform. Adds production concerns (env vars, secrets management, CDN) only when relevant.
+**Why this matters.** Determines whether T2 (deployment scripts) targets a local docker-compose or a real cloud platform. Adds production concerns (env vars, secrets management, CDN) only when relevant.
 
 ---
 
@@ -52,7 +52,7 @@ The orchestrator delegates to `forgecraft-mcp` to set up the spec cascade tailor
 
 - **Functional spec** (`docs/PRD.md` or `docs/specs/spec.md`) — distilled from the user's idea + MVP scope
 - **CLAUDE.md** — sentinel file with hard constraints and tool-sequencing rules tailored to the chosen stack
-- **forgecraft.yaml** — governance, tier T1-T2, applicable structural disciplines for the chosen stack
+- **forgecraft.yaml** — governance, tier T1, applicable structural disciplines for the chosen stack
 - **Behavioral contracts** (`docs/use-cases.md`) — derived from the MVP scope description
 - **ADRs scaffolding** — empty templates for the decisions the AI will make during generation
 - **package.json / pyproject.toml / Cargo.toml** — initialized with appropriate runtime + test deps
