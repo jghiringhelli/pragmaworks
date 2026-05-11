@@ -16,14 +16,23 @@ This meta-skill identifies which lifecycle entry point applies to the current ta
 ```
 Task arrives in a GS-bearing project
     │
-    ├── New project / empty folder / "I have an idea" ────→ gs-bootstrap
-    ├── Existing project / "audit this" / "what's wrong?" ─→ gs-audit
-    ├── Audit result in hand / "fix the findings" ────────→ gs-remediate
-    ├── Existing project → new stack / "we're rewriting" ──→ gs-migrate
-    └── Joining a codebase / "brief me" ──────────────────→ gs-onboard
+    ├── ENTRY POINTS (where work begins)
+    │     ├── New project / empty folder / "I have an idea" ────→ gs-bootstrap
+    │     ├── Existing project / "audit this" / "what's wrong?" ─→ gs-audit
+    │     ├── Audit result in hand / "fix the findings" ────────→ gs-remediate
+    │     ├── Existing project → new stack / "we're rewriting" ──→ gs-migrate
+    │     └── Joining a codebase / "brief me" ──────────────────→ gs-onboard
+    │
+    ├── ENFORCEMENT (the hard tiers — auto-fire on context match)
+    │     ├── Session start in a GS repo / before merge / before deploy → gs-cascade-check
+    │     ├── Just deployed / "is it live?" / "smoke test" ──→ gs-verify-deploy
+    │     ├── Prod incident / drift / "p99 went up" / 5xx ─→ gs-monitor-production
+    │     └── Confirmed spec-change candidate / ADR overturn → gs-evolve-spec
 ```
 
 If none of these clearly applies, do not invent a flow. Ask the user which entry point they want, citing the five options above.
+
+**Entry points vs enforcement.** The five entry-point skills (top group) are user-initiated — the user wants to start work and picks the route. The four enforcement skills (bottom group) are context-initiated — they fire automatically when their description matches a recent user message or system state. Enforcement skills are how GS prevents the "I'll skip verification this once" drift that the prior paradigm reliably fails. The discipline is not in the user remembering; it is in the AI auto-firing the skill when the trigger phrase appears.
 
 ## Non-Negotiable Behaviors
 
@@ -47,7 +56,9 @@ When pragmaworks's manifest is in play, treat the `api_surface` field as load-be
 
 ## Tier Context
 
-Most anchor skills operate at **T1 (Development)** — the dev-cycle entry. Some flows (migration) carry implicit T2 (deployment scripts derived from spec). T3 (production monitoring), T4 (evolution), T5 (synthesis), and T6 (meta-telos) are not currently invokable as skills — they are framework concerns, not workflow entry points.
+- **Entry-point skills** operate at T1 (Development) — the dev-cycle entry. `gs-migrate` additionally carries implicit T2 (deployment scripts derived from spec).
+- **Enforcement skills** span tier boundaries: `gs-cascade-check` is cross-cutting (verifies coherence across all tiers); `gs-verify-deploy` is the T2 → T3 transition; `gs-monitor-production` is T3 (Production); `gs-evolve-spec` is T4 (Evolution).
+- T5 (Synthesis) and T6 (Meta-telos) are not currently invokable as skills — they are framework concerns above the workflow-entry layer.
 
 ## What Lives Where
 

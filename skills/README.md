@@ -4,14 +4,30 @@ Generative Specification skills for AI coding agents — the routing/orientation
 
 ## The skills
 
+**Meta** — orients and routes:
+
 | Skill | Use when |
 |---|---|
 | [`using-gs-skills`](using-gs-skills/SKILL.md) | Starting a session in a GS-bearing project; routes to the right anchor |
+
+**Entry points** (user-initiated — where work begins):
+
+| Skill | Use when |
+|---|---|
 | [`gs-bootstrap`](gs-bootstrap/SKILL.md) | Greenfield — empty folder, new idea |
 | [`gs-audit`](gs-audit/SKILL.md) | Brownfield — existing repo, score it |
 | [`gs-remediate`](gs-remediate/SKILL.md) | Act on audit findings — generate and apply DP-XXX prompts |
 | [`gs-migrate`](gs-migrate/SKILL.md) | Move existing system to a new stack |
 | [`gs-onboard`](gs-onboard/SKILL.md) | Brief a developer joining an existing codebase |
+
+**Enforcement** (context-initiated — auto-fire on trigger phrases / hook events):
+
+| Skill | Tier | Use when |
+|---|---|---|
+| [`gs-cascade-check`](gs-cascade-check/SKILL.md) | Cross-cutting | Session start, before merge, before deploy, before any structural edit |
+| [`gs-verify-deploy`](gs-verify-deploy/SKILL.md) | T2 → T3 | Just deployed; verify the contract end-to-end with hurl + k6 + CLI checks |
+| [`gs-monitor-production`](gs-monitor-production/SKILL.md) | T3 | Production incident, drift, p99 breach; convert runtime signals to spec change candidates |
+| [`gs-evolve-spec`](gs-evolve-spec/SKILL.md) | T4 | Confirmed spec-change candidate; run the mutation gauntlet before any spec edit |
 
 The skills are agent-agnostic in format — same `SKILL.md` installs as a Claude Code plugin, copies into Cursor's `.cursor/rules/`, registers as Gemini CLI skills, or feeds into Copilot context. See per-agent install notes below.
 
@@ -47,6 +63,6 @@ A skill should never duplicate substantive logic that exists in `prompts/` or `s
 
 ## Convergence note
 
-This directory takes its structural cues from Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills) (Google Cloud AI, 2026) — same SKILL.md frontmatter, same multi-host strategy, same "thin routing on top of substantive tools" pattern. We diverge in scope: Osmani's 22 skills are all T1 (the dev cycle). Our 5 anchor skills + 1 meta map to the five GS lifecycle entry points, all of which begin at T1 but cascade into T2+ obligations. Where Osmani's `spec-driven-development` skill is closest to ours, our `gs-bootstrap` adds: branch isolation, calibration anchors, the seven-property scoring rubric, and the ADR-sequencing handoff that closes the loop with forgecraft.
+This directory takes its structural cues from Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills) (Google Cloud AI, 2026) — same SKILL.md frontmatter, same multi-host strategy, same "thin routing on top of substantive tools" pattern. We diverge in scope: Osmani's 22 skills are all T1 (the dev cycle). Our pack splits into **entry-point skills** (the five lifecycle entries, all of which begin at T1) and **enforcement skills** (cross-cutting + T2/T3/T4 — the "hard" tiers where the prior paradigm reliably drifts). Where Osmani's `spec-driven-development` skill is closest to ours, our `gs-bootstrap` adds: branch isolation, calibration anchors, the seven-property scoring rubric, and the ADR-sequencing handoff that closes the loop with forgecraft.
 
-The fastest way to see the difference is to install both and watch them route on the same project. Osmani's skills will get you to a clean dev cycle. Pragmaworks skills will get you to a clean dev cycle that explicitly declares its tier obligations and is auditable across the cascade.
+The enforcement skills are what make GS distinct in practice. Osmani's skills get you to a clean dev cycle. Our enforcement skills make sure the dev cycle's output survives staging (`gs-verify-deploy`), production (`gs-monitor-production`), and evolution (`gs-evolve-spec`) — and that the cascade between tiers stays coherent (`gs-cascade-check`). Each enforcement skill has a pure-GS variant section: the discipline works without the tooling; the tooling makes the discipline survive operational pressure.
