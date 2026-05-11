@@ -58,6 +58,7 @@ gemini skills install https://github.com/jghiringhelli/pragmaworks.git --path sk
 - **`skills/`** (this directory) — routing, orientation, gates, when-to-use guidance
 - **`prompts/`** — the structured prompts each skill invokes (bootstrap-clarify, mvp-guide, migration-refinement, onboarding-briefing, judgment-layer-disclaimer, licensing-trigger)
 - **`src/`** — the MCP tools that do the actual work (`pragmaworks_*` registered in `src/mcp/server.ts`)
+- **[`gs/generative-specification/docs/repository-discipline.md`](../../gs/generative-specification/docs/repository-discipline.md)** — the tool-agnostic mechanical reference for *what* each skill enforces (the pure-GS variant sections of each SKILL.md derive from this single source)
 
 A skill should never duplicate substantive logic that exists in `prompts/` or `src/`. The skill's job is to **point** at the right pragmaworks_* tool with the right framing, and enforce the non-negotiable behaviors (sentinel-aware-write, judgment layer, branch isolation, public-surface diff).
 
