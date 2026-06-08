@@ -44,15 +44,34 @@ Call `pragmaworks_setup_harness` against the deployed target URL. The MCP tool w
 2. Generate hurl files for HTTP contract verification (auth flows, happy-path endpoints, error-shape contracts)
 3. Generate k6 scripts for SLO-ramp testing (response time, throughput against the NFR contract)
 4. Generate CLI smoke tests where the deployment exposes a CLI surface
+5. Generate the **use-case walk** — one driver per UC-/F-NNN that exercises the full multimodal verification loop (below), not just the HTTP contract
+
+### The Verification Loop — multimodal AI-as-QA
+
+Contract + load (hurl + k6) proves the boundary and the SLOs. It does **not** prove a use case actually works end-to-end. For that, the walk triangulates evidence across every layer the use case touches and checks they **cohere**. Canonical loop for a create/update use case:
+
+1. **Prior state** — SQL / DB MCP: capture DB state before the action
+2. **Behavior** — Playwright MCP: drive the user flow in a real browser (mobile-automation MCP for mobile; hurl for headless/API)
+3. **Business layer** — read logs/traces: confirm the business layer received and processed the right command and values
+4. **New state** — SQL again: capture the delta — exactly the right rows changed, nothing else
+5. **Return** — UI refresh, Playwright screenshot + vision check against the use-case postcondition
+6. **Coherence** — UI, logs, and DB must tell the same story. Screen says "saved" but DB delta empty, or logs show a value the UI never displayed → **fail, even if each isolated check passes**
+
+Evidence layers → tools: state = SQL/DB MCP · behavior+visual = Playwright MCP+vision · API/contract = hurl · business internals = log/trace reading · SLO/load = k6 · statistical/balance = parameterized simulation.
+
+**Patterns (one principle, swapped per shape):** headless (no UI — hurl+SQL+logs) · mobile (mobile MCP) · simulation/optimization/balance (parameterized run, statistical verification) · ETL/data pipeline (trace a datum source→transform stages→aggregated sink; verify lineage + coherence) · event-driven/async (publish→consume→effect across broker+consumer logs+state; account for eventual consistency, idempotency, retries). New shape → map its evidence layers to tools, check coherence.
 
 ### Phase 3 — Run the harness against the live deployment
 
-Run hurl, then k6, then any CLI checks. The order matters — failing hurl means broken contract, not a load problem; failing k6 means contract is fine but performance is wrong. Capture all output to `pragmaworks/verify-<timestamp>/results.json`.
+Run in evidence order: **hurl** (contract) → **use-case walk** (multimodal loop, with coherence) → **k6** (SLO/load). The order matters — failing hurl means broken contract; failing the walk means the use case doesn't actually work (or the layers don't cohere); failing k6 means it works but breaches the NFR contract. Capture all output to `pragmaworks/verify-<timestamp>/results.json`.
 
-Three outcomes:
+What the pass proves: **Executable** (the use cases actually run against the deployed artifact) + **Verifiable** (every NFR threshold and postcondition checked against the spec, by the harness). NFR battery + generative execution = those two properties, demonstrated at production fidelity.
+
+Outcomes:
 - **All green** → deploy is verified; record `verified: true` in Chronicle as an architectural memory entry tagged `t2-passed`
 - **Contract failures (hurl red)** → surface each as a DP-XXX prompt; the spec said X, the deployment delivers Y, here's what changed
-- **SLO failures (k6 red, hurl green)** → deployment is functionally correct but breaches the NFR contract; surface as DP-XXX for either spec adjustment or performance work
+- **Use-case-walk failures (incl. incoherence)** → surface the use case + the layers that disagree; this is a functional break even when hurl is green
+- **SLO failures (k6 red, walk green)** → functionally correct but breaches the NFR contract; surface as DP-XXX for spec adjustment or performance work
 
 ### Phase 4 — Either close the loop or feed back to T1
 
@@ -75,6 +94,11 @@ This is what the skill enforces — discipline above tooling. The tooling makes 
 
 T2 verification half. T2 authoring half is "deployment-as-spec" — the deployment scripts derived from the spec. This skill verifies those scripts produced what they claimed.
 
-## Hook Integration
+## Hook Integration & the Promotion Gate
 
-In a forgecraft-governed repo, this skill should be triggered by a post-deploy hook (`.claude/hooks/post-deploy.sh`). The hook fires the skill automatically; the skill's first job is to surface assumptions about what was just deployed and where, so the user can correct before the harness runs.
+In a forgecraft-governed repo, this skill is the enforcement body of the **Tier 2 promotion gate** (`docs/specs/t2-promotion-gate.md`). Two forcing levels:
+
+1. **Behavioral (always on):** a post-deploy hook (`.claude/hooks/post-deploy.sh`) auto-fires the skill on deploy-shaped context so the AI cannot quietly skip it. The skill's first job is to surface assumptions about what was deployed and where, so the user can correct before the harness runs.
+2. **Hard gate (CI/CD):** in the pipeline, the skill runs after deploy-to-staging and **exits nonzero on any failure** (contract, use-case walk including incoherence, or SLO). The pipeline's promotion step is gated on that exit code — nothing promotes to the next environment without a green walk. This is the Tier 2 analog of Tier 1's pre-commit cascade hook: the gate is mechanical, not a reminder.
+
+The gate is **declared at Mold** (the NFR thresholds and the rule "every use case passes the walk" live in SPEC.md and the gate policy from the moment you mold) and its **body is built here at Harden** (the hurl files, Playwright walk, and wiring to real endpoints can only be generated once the code exists). Declared once; made executable as the system does.
