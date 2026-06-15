@@ -11,6 +11,8 @@ A deployment that compiles, builds, and shows green CI is not a working deployme
 
 The discipline this enforces is the one the prior paradigm reliably fails: **the deployment was declared done before the contract was verified.** Skill auto-fires on deploy-shaped context so the AI cannot quietly skip it.
 
+> **Naming.** This skill is the **generative execution** (*ejecución generativa*) loop applied at the T2→T3 transition: exercising the running system through its contract across independent signals — the *multimodal verification loop*, not "run the tests" and not a single Playwright e2e. Same loop, deploy-time instance. Convention: `soma/docs/method/convenciones-asistente.md`.
+
 ## When to Use
 
 - The AI just shipped a deploy (any of: `git push`, `railway up`, `vercel`, `gh release create`, `npm publish`, `kubectl apply`, `terraform apply`, `flyctl deploy`)

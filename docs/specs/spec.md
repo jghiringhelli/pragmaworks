@@ -55,7 +55,7 @@ The two cookbook pages on `pragmaworks.dev` describe the user-facing experience.
 | AI asks 2-3 clarifying questions | `prompts/bootstrap-clarify.md` referenced by the orchestrator |
 | Spec generated under GS discipline | Orchestrator delegates to `forgecraft-mcp` for cascade setup |
 | T1-T2 done automatically | Orchestrator runs the spec, harness, deployment cascade (T1 collapses spec/code/harness; T2 covers deployment) |
-| Optional: run harness end-to-end with screenshots | `pragmaworks_setup_harness` + multimodal verification step |
+| Optional: run harness end-to-end with screenshots | `pragmaworks_setup_harness` + generative execution (multimodal verification step) |
 
 | Cookbook step (leaders cookbook) | This package delivers via |
 |---|---|
