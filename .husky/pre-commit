@@ -1,2 +1,3 @@
 #!/bin/sh
+"$(dirname "$0")/employer-guard" pre-commit "$@" || exit 1 # employer-guard
 npx tsc --noEmit
